@@ -614,7 +614,11 @@ namespace Microsoft.SCIM
             }
 
             string nextExpression = remainder.Substring(indexNextFilter);
+#if NET
             int indexClosingBracket = remainder.IndexOf(FilterExpression.BracketClose, StringComparison.InvariantCulture);
+#else
+            int indexClosingBracket = remainder.IndexOf(FilterExpression.BracketClose);
+#endif
             int nextExpressionLevel;
             int nextExpressionGroup;
             if (indexClosingBracket >= 0 && indexClosingBracket < indexLogicalOperator)
@@ -748,7 +752,11 @@ namespace Microsoft.SCIM
             }
             else
             {
+#if NET
                 int index = input.IndexOf(FilterExpression.Space, StringComparison.InvariantCulture);
+#else
+                int index = input.IndexOf(FilterExpression.Space);
+#endif
                 if (index >= 0)
                 {
                     // If unquoted string comparison values were to be rejected,

@@ -6,6 +6,7 @@ namespace Microsoft.SCIM
     using System.Net;
     using System.Net.Http;
     using System.Web.Http;
+#if NET
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +16,11 @@ namespace Microsoft.SCIM
     public sealed class ServiceProviderConfigurationController : ControllerTemplate
     {
         public ServiceProviderConfigurationController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class ServiceProviderConfigurationControllerBase : ControllerTemplate
+    {
+        public ServiceProviderConfigurationControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }

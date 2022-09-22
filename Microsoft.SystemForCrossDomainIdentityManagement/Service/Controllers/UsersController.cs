@@ -3,6 +3,7 @@
 namespace Microsoft.SCIM
 {
     using System;
+#if NET
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,11 @@ namespace Microsoft.SCIM
     public sealed class UsersController : ControllerTemplate<Core2EnterpriseUser>
     {
         public UsersController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class UsersControllerBase : ControllerTemplate<Core2EnterpriseUser>
+    {
+        public UsersControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }

@@ -7,6 +7,7 @@ namespace Microsoft.SCIM
     using System.Net;
     using System.Net.Http;
     using System.Web.Http;
+#if NET
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,11 @@ namespace Microsoft.SCIM
     public sealed class ResourceTypesController : ControllerTemplate
     {
         public ResourceTypesController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class ResourceTypesControllerBase : ControllerTemplate
+    {
+        public ResourceTypesControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }

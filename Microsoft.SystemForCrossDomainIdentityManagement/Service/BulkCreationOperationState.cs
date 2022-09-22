@@ -109,7 +109,7 @@ namespace Microsoft.SCIM
                                 continue;
                             }
 
-                            string memberValue = System.Text.Json.JsonSerializer.Serialize(member);
+                            string memberValue = JsonConvert.SerializeObject(member);
                             if (!string.IsNullOrWhiteSpace(memberValue))
                             {
                                 PatchOperation2Combined patchOperation =

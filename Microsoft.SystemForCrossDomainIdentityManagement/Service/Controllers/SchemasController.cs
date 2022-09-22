@@ -7,6 +7,7 @@ namespace Microsoft.SCIM
     using System.Net;
     using System.Net.Http;
     using System.Web.Http;
+#if NET
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,11 @@ namespace Microsoft.SCIM
     public sealed class SchemasController : ControllerTemplate
     {
         public SchemasController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class SchemasControllerBase : ControllerTemplate
+    {
+        public SchemasControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }
@@ -40,13 +46,13 @@ namespace Microsoft.SCIM
 
                 IReadOnlyCollection<Resource> resources = provider.Schema;
                 QueryResponseBase result = new QueryResponse(resources);
-                
+
                 result.TotalResults =
                     result.ItemsPerPage =
                         resources.Count;
                 result.StartIndex = 1;
                 return result;
-                
+
             }
             catch (ArgumentException argumentException)
             {

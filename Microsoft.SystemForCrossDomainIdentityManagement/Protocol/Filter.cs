@@ -134,7 +134,11 @@ namespace Microsoft.SCIM
                 string encodedValue = this.comparisonValue;
                 foreach (KeyValuePair<string, string> encoding in Filter.ReservedCharacterEncodingsPerRfc2396.Value)
                 {
+#if NET
                     encodedValue = encodedValue.Replace(encoding.Key, encoding.Value, StringComparison.InvariantCulture);
+#else
+                    encodedValue = encodedValue.Replace(encoding.Key, encoding.Value);
+#endif
                 }
                 this.comparisonValueEncoded = encodedValue;
             }
@@ -305,10 +309,14 @@ namespace Microsoft.SCIM
                 Filter clone = new Filter(filter);
                 clone.ComparisonValue = placeholder;
                 string currentFilter = clone.Serialize();
-                string encodedFilter = 
+                string encodedFilter =
                     HttpUtility
                     .UrlEncode(currentFilter)
+#if NET
                     .Replace(placeholder, filter.ComparisonValueEncoded, StringComparison.InvariantCulture);
+#else
+                    .Replace(placeholder, filter.ComparisonValueEncoded);
+#endif
                 if (string.IsNullOrWhiteSpace(allFilters))
                 {
                     allFilters =
