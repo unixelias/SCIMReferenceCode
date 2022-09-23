@@ -231,6 +231,7 @@ namespace Microsoft.SCIM
 #if NET
         public virtual async Task<ActionResult<QueryResponseBase>> Get()
 #else
+        [Route("")]
         public virtual async Task<IHttpActionResult> Get()
 #endif
         {
@@ -622,6 +623,7 @@ namespace Microsoft.SCIM
 #if NET
         public virtual async Task<ActionResult<Resource>> Post([FromBody]T resource)
 #else
+        [Route("")]
         public virtual async Task<IHttpActionResult> Post([FromBody] T resource)
 #endif
         {
