@@ -141,6 +141,19 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                            
                         }
 
+                        // DisplayName filter
+                        else if (andFilter.AttributePath.Equals(AttributeNames.DisplayName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (andFilter.FilterOperator != ComparisonOperator.Equals)
+                            {
+                                throw new NotSupportedException(
+                                    string.Format(SystemForCrossDomainIdentityManagementServiceResources.ExceptionFilterOperatorNotSupportedTemplate, andFilter.FilterOperator));
+                            }
+
+                            string displayName = andFilter.ComparisonValue;
+                            predicateAnd = predicateAnd.And(p => string.Equals(p.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));                           
+                        }
+
                         // ExternalId filter
                         else if (andFilter.AttributePath.Equals(AttributeNames.ExternalIdentifier, StringComparison.OrdinalIgnoreCase))
                         {

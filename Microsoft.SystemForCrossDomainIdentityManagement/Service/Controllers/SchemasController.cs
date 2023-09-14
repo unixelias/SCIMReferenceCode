@@ -19,7 +19,7 @@ namespace Microsoft.SCIM
             : base(provider, monitor)
         {
         }
-
+        [HttpGet]
         public QueryResponseBase Get()
         {
             string correlationIdentifier = null;

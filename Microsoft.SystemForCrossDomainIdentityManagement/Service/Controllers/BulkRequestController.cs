@@ -22,7 +22,7 @@ namespace Microsoft.SCIM
             : base(provider, monitor)
         {
         }
-
+        [HttpPost]
         public async Task<BulkResponse2> Post([FromBody] BulkRequest2 bulkRequest)
         {
             string correlationIdentifier = null;

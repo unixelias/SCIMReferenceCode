@@ -9,9 +9,11 @@ namespace Microsoft.SCIM
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
 
+    [Produces(ProtocolConstants.ContentType)]
     public abstract class ControllerTemplate : ControllerBase
     {
         internal const string AttributeValueIdentifier = "{identifier}";
@@ -92,6 +94,9 @@ namespace Microsoft.SCIM
 
 
         [HttpDelete(ControllerTemplate.AttributeValueIdentifier)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         public virtual async Task<IActionResult> Delete(string identifier)
         {
             string correlationIdentifier = null;
@@ -99,7 +104,7 @@ namespace Microsoft.SCIM
             {
                 if (string.IsNullOrWhiteSpace(identifier))
                 {
-                    return this.BadRequest();
+                    return this.ScimError(HttpStatusCode.BadRequest, SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidIdentifier);
                 }
 
                 identifier = Uri.UnescapeDataString(identifier);
@@ -125,13 +130,13 @@ namespace Microsoft.SCIM
                     monitor.Report(notification);
                 }
 
-                return this.BadRequest();
+                return this.ScimError(HttpStatusCode.BadRequest, argumentException.Message);
             }
             catch (HttpResponseException responseException)
             {
                 if (responseException.Response?.StatusCode == HttpStatusCode.NotFound)
                 {
-                    return this.NotFound();
+                    return this.ScimError(HttpStatusCode.NotFound, string.Format(SystemForCrossDomainIdentityManagementServiceResources.ResourceNotFoundTemplate, identifier));
                 }
 
                 throw;
@@ -181,6 +186,13 @@ namespace Microsoft.SCIM
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(QueryResponseBase[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status501NotImplemented)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
         public virtual async Task<ActionResult<QueryResponseBase>> Get()
         {
@@ -283,6 +295,12 @@ namespace Microsoft.SCIM
         }
 
         [HttpGet(ControllerTemplate.AttributeValueIdentifier)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
         public virtual async Task<IActionResult> Get([FromUri]string identifier)
         {
@@ -440,6 +458,13 @@ namespace Microsoft.SCIM
         }
 
         [HttpPatch(ControllerTemplate.AttributeValueIdentifier)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         public virtual async Task<IActionResult> Patch(string identifier, [FromBody]PatchRequest2 patchRequest)
         {
             string correlationIdentifier = null;
@@ -448,14 +473,14 @@ namespace Microsoft.SCIM
             {
                 if (string.IsNullOrWhiteSpace(identifier))
                 {
-                    return this.BadRequest();
+                    return this.ScimError(HttpStatusCode.BadRequest, SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidIdentifier);
                 }
 
                 identifier = Uri.UnescapeDataString(identifier);
 
                 if (null == patchRequest)
                 {
-                    return this.BadRequest();
+                    return this.ScimError(HttpStatusCode.BadRequest, SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidRequest);
                 }
 
                 HttpRequestMessage request = this.ConvertRequest();
@@ -487,7 +512,7 @@ namespace Microsoft.SCIM
                     monitor.Report(notification);
                 }
 
-                return this.BadRequest();
+                return this.ScimError(HttpStatusCode.BadRequest, argumentException.Message);
             }
             catch (NotImplementedException notImplementedException)
             {
@@ -521,7 +546,7 @@ namespace Microsoft.SCIM
             {
                 if (responseException.Response?.StatusCode == HttpStatusCode.NotFound)
                 {
-                    return this.NotFound();
+                    return this.ScimError(HttpStatusCode.NotFound, string.Format(SystemForCrossDomainIdentityManagementServiceResources.ResourceNotFoundTemplate, identifier));
                 }
                 else
                 {
@@ -556,6 +581,12 @@ namespace Microsoft.SCIM
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         public virtual async Task<ActionResult<Resource>> Post([FromBody]T resource)
         {
             string correlationIdentifier = null;
@@ -564,7 +595,7 @@ namespace Microsoft.SCIM
             {
                 if (null == resource)
                 {
-                    return this.BadRequest();
+                    return this.ScimError(HttpStatusCode.BadRequest, SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidRequest);
                 }
 
                 HttpRequestMessage request = this.ConvertRequest();
@@ -590,7 +621,7 @@ namespace Microsoft.SCIM
                     monitor.Report(notification);
                 }
 
-                return this.BadRequest();
+                return this.ScimError(HttpStatusCode.BadRequest, argumentException.Message);
             }
             catch (NotImplementedException notImplementedException)
             {
@@ -633,9 +664,9 @@ namespace Microsoft.SCIM
                 }
 
                 if (httpResponseException.Response.StatusCode == HttpStatusCode.Conflict)
-                    return this.Conflict();
+                    return this.ScimError(HttpStatusCode.Conflict, SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidRequest);
                 else
-                    return this.BadRequest();
+                    return this.ScimError(HttpStatusCode.BadRequest, httpResponseException.Message);
             }
             catch (Exception exception)
             {
@@ -654,6 +685,13 @@ namespace Microsoft.SCIM
         }
 
         [HttpPut(ControllerTemplate.AttributeValueIdentifier)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(QueryResponseBase), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         public virtual async Task<ActionResult<Resource>> Put([FromBody]T resource, string identifier)
         {
             string correlationIdentifier = null;
