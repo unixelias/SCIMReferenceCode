@@ -5,7 +5,12 @@
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="ScimResources\Queries\CheckIfUserExists.sql" />
+    <None Remove="ScimResources\Queries\DeleteUser.sql" />
+    <None Remove="ScimResources\Queries\GetUserById.sql" />
     <None Remove="ScimResources\Queries\InsertUser.sql" />
+    <None Remove="ScimResources\Queries\ListAllUsers.sql" />
+    <None Remove="ScimResources\Queries\UpdateUserById.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="ScimResources\Queries\InsertUser.sql"/>
+    <EmbeddedResource Include="ScimResources\Queries\ListAllUsers.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\DeleteUser.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\CheckIfUserExists.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\GetUserById.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\UpdateUserById.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\InsertUser.sql" />
   </ItemGroup>
 </Project>

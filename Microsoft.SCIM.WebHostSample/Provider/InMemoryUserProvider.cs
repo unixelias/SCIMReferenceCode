@@ -14,12 +14,12 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
     public class InMemoryUserProvider : ProviderBase
     {
-        private readonly InMemoryStorage storage;
+        //private readonly InMemoryStorage storage;
         private readonly IUserRepository repository;
 
         public InMemoryUserProvider(IUserRepository repository)
         {
-            this.storage = InMemoryStorage.Instance;
+            //    this.storage = InMemoryStorage.Instance;
             this.repository = repository;
         }
 
@@ -36,16 +36,21 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            IEnumerable<Core2EnterpriseUser> exisitingUsers = this.storage.Users.Values;
-            if
-            (
-                exisitingUsers.Any(
-                    (Core2EnterpriseUser exisitingUser) =>
-                        string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal))
-            )
+            if(repository.CheckIfUserExistsAsync(user.Identifier, user.UserName).Result)
             {
                 throw new HttpResponseException(HttpStatusCode.Conflict);
             }
+
+            //IEnumerable<Core2EnterpriseUser> exisitingUsers = this.storage.Users.Values;
+            //if
+            //(
+            //    exisitingUsers.Any(
+            //        (Core2EnterpriseUser exisitingUser) =>
+            //            string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal))
+            //)
+            //{
+            //    throw new HttpResponseException(HttpStatusCode.Conflict);
+            //}
 
             // Update metadata
             DateTime created = DateTime.UtcNow;
@@ -54,7 +59,9 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             
             string resourceIdentifier = Guid.NewGuid().ToString();
             resource.Identifier = resourceIdentifier;
-            this.storage.Users.Add(resourceIdentifier, user);
+            //this.storage.Users.Add(resourceIdentifier, user);
+
+
             repository.CreateAsync(user).Wait();
             return Task.FromResult(resource);
         }
@@ -68,11 +75,12 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
             string identifier = resourceIdentifier.Identifier;
 
-            if (this.storage.Users.ContainsKey(identifier))
-            {
-                this.storage.Users.Remove(identifier);
-            }
+            //if (this.storage.Users.ContainsKey(identifier))
+            //{
+            //    this.storage.Users.Remove(identifier);
+            //}
 
+            repository.DeleteUserByIdAsync(identifier).Wait();
             return Task.CompletedTask;
         }
 
@@ -105,9 +113,14 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
             if (parameters.AlternateFilters.Count <= 0)
             {
-                results = this.storage.Users.Values.Select(
-                    (Core2EnterpriseUser user) => user as Resource);
+                results = repository.ListAllAsync().Result.Select((Core2EnterpriseUser user) => user as Resource);
             }
+
+            //if (parameters.AlternateFilters.Count <= 0)
+            //{
+            //    results = this.storage.Users.Values.Select(
+            //        (Core2EnterpriseUser user) => user as Resource);
+            //}
             else
             {
 
@@ -222,8 +235,9 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                     predicate = predicate.Or(predicateAnd);
 
                 }
-
-                results = this.storage.Users.Values.Where(predicate.Compile());
+                
+                results = repository.ListAllAsync().Result.Where(predicate.Compile());
+                //results = this.storage.Users.Values.Where(predicate.Compile());
             }
 
             if (parameters.PaginationParameters != null)
@@ -249,22 +263,30 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            if
-            (
-                this.storage.Users.Values.Any(
-                    (Core2EnterpriseUser exisitingUser) =>
-                        string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal) &&
-                        !string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase))
-            )
+            if (repository.CheckIfUserExistsAsync(user.Identifier, user.UserName).Result)
             {
                 throw new HttpResponseException(HttpStatusCode.Conflict);
             }
+            //if
+            //(
+            //    this.storage.Users.Values.Any(
+            //        (Core2EnterpriseUser exisitingUser) =>
+            //            string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal) &&
+            //            !string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase))
+            //)
+            //{
+            //    throw new HttpResponseException(HttpStatusCode.Conflict);
+            //}
 
-            Core2EnterpriseUser exisitingUser = this.storage.Users.Values
-                .FirstOrDefault(
-                    (Core2EnterpriseUser exisitingUser) =>
-                        string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase)
-                );
+
+
+            //Core2EnterpriseUser exisitingUser = this.storage.Users.Values
+            //    .FirstOrDefault(
+            //        (Core2EnterpriseUser exisitingUser) =>
+            //            string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase)
+            //    );
+
+            Core2EnterpriseUser exisitingUser = repository.GetUserByIdAsync(user.Identifier).Result;
             if (exisitingUser == null)
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -274,8 +296,9 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             user.Metadata.Created = exisitingUser.Metadata.Created;
             user.Metadata.LastModified = DateTime.UtcNow;
 
-            this.storage.Users[user.Identifier] = user;
+            //this.storage.Users[user.Identifier] = user;
             Resource result = user as Resource;
+
             return Task.FromResult(result);
         }
 
@@ -296,17 +319,21 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new ArgumentNullException(nameof(parameters));
             }
 
-            Resource result = null;
+            Resource result;
             string identifier = parameters.ResourceIdentifier.Identifier;
-
-            if (this.storage.Users.ContainsKey(identifier))
+            result = repository.GetUserByIdAsync(identifier).Result as Resource;
+            if (result != null)
             {
-                if (this.storage.Users.TryGetValue(identifier, out Core2EnterpriseUser user))
-                {
-                    result = user as Resource;
-                    return Task.FromResult(result);
-                }
+                return Task.FromResult(result);
             }
+            //if (this.storage.Users.ContainsKey(identifier))
+            //{
+            //    if (this.storage.Users.TryGetValue(identifier, out Core2EnterpriseUser user))
+            //    {
+            //        result = user as Resource;
+            //        return Task.FromResult(result);
+            //    }
+            //}
 
             throw new HttpResponseException(HttpStatusCode.NotFound);
         }
@@ -342,10 +369,13 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new NotSupportedException(unsupportedPatchTypeName);
             }
 
-            if (this.storage.Users.TryGetValue(patch.ResourceIdentifier.Identifier, out Core2EnterpriseUser user))
+            Core2EnterpriseUser user = repository.GetUserByIdAsync(patch.ResourceIdentifier.Identifier).Result;
+
+            if (user != null)
             {
                 user.Apply(patchRequest);
 
+                repository.UpdateUserByIdAsync(patch.ResourceIdentifier.Identifier, user).Wait();
                 // Update metadata
                 user.Metadata.LastModified = DateTime.UtcNow;
             }
@@ -353,6 +383,19 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
+            
+
+            //if (this.storage.Users.TryGetValue(patch.ResourceIdentifier.Identifier, out Core2EnterpriseUser user))
+            //{
+            //    user.Apply(patchRequest);
+
+            //    // Update metadata
+            //    user.Metadata.LastModified = DateTime.UtcNow;
+            //}
+            //else
+            //{
+            //    throw new HttpResponseException(HttpStatusCode.NotFound);
+            //}
 
             return Task.CompletedTask;
         }

@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.SCIM.Repository.Utils;
 using System;
 using System.Collections.Generic;
@@ -9,12 +10,12 @@ namespace Microsoft.SCIM.Repository;
 
 public abstract class DatabaseRepositoryBasic
 {
-    private const string CONNECTION_STRING = "ConnectionStrings:MainDb";
+    private const string CONNECTION_STRING = "MainDb";
     private readonly string __connectionString;
 
-    protected DatabaseRepositoryBasic()
+    protected DatabaseRepositoryBasic(IConfiguration configuration)
     {
-        __connectionString = Environment.GetEnvironmentVariable(CONNECTION_STRING);
+        __connectionString = configuration.GetConnectionString(CONNECTION_STRING);
     }
 
     protected async Task<IEnumerable<TObject>> ListAsync<TObject>(string command, object parameters = null, int? timeout = null)
