@@ -2,6 +2,8 @@
 
 namespace Microsoft.SCIM.WebHostSample.Provider
 {
+    using Microsoft.SCIM;
+    using Microsoft.SCIM.Repository.ScimResources;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -9,15 +11,16 @@ namespace Microsoft.SCIM.WebHostSample.Provider
     using System.Net;
     using System.Threading.Tasks;
     using System.Web.Http;
-    using Microsoft.SCIM;
 
     public class InMemoryGroupProvider : ProviderBase
     {
-        private readonly InMemoryStorage storage;
+        //private readonly InMemoryStorage storage;
+        private readonly IGroupRepository repository;
 
-        public InMemoryGroupProvider()
+        public InMemoryGroupProvider(IGroupRepository repository)
         {
-            this.storage = InMemoryStorage.Instance;
+            //this.storage = InMemoryStorage.Instance;
+            this.repository = repository;
         }
 
         public override Task<Resource> CreateAsync(Resource resource, string correlationIdentifier)
@@ -34,16 +37,11 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            IEnumerable<Core2Group> exisitingGroups = this.storage.Groups.Values;
-            if
-            (
-                exisitingGroups.Any(
-                    (Core2Group exisitingGroup) =>
-                        string.Equals(exisitingGroup.DisplayName, group.DisplayName, StringComparison.Ordinal))
-            )
+            if (repository.CheckIfGroupExistsAsync(group.Identifier, group.DisplayName).Result)
             {
                 throw new HttpResponseException(HttpStatusCode.Conflict);
             }
+
             //Update Metadata
             DateTime created = DateTime.UtcNow;
             group.Metadata.Created = created;
@@ -51,7 +49,8 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
             string resourceIdentifier = Guid.NewGuid().ToString();
             resource.Identifier = resourceIdentifier;
-            this.storage.Groups.Add(resourceIdentifier, group);
+
+            repository.CreateAsync(group).Wait();
 
             return Task.FromResult(resource);
         }
@@ -65,10 +64,7 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
             string identifier = resourceIdentifier.Identifier;
 
-            if (this.storage.Groups.ContainsKey(identifier))
-            {
-                this.storage.Groups.Remove(identifier);
-            }
+            repository.DeleteGroupByIdAsync(identifier).Wait();
 
             return Task.CompletedTask;
         }
@@ -104,8 +100,7 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
             if (queryFilter == null)
             {
-                results = this.storage.Groups.Values.Select(
-                    (Core2Group user) => user as Resource);
+                results = repository.ListAllAsync().Result.Select((Core2Group user) => user as Resource);
             }
             else
             {
@@ -124,22 +119,19 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                     throw new NotSupportedException(string.Format(SystemForCrossDomainIdentityManagementServiceResources.ExceptionFilterOperatorNotSupportedTemplate, queryFilter.FilterOperator));
                 }
 
-
                 if (queryFilter.AttributePath.Equals(AttributeNames.DisplayName))
                 {
-                    
                     string displayName = queryFilter.ComparisonValue;
                     predicateAnd = predicateAnd.And(p => string.Equals(p.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));
-                  
                 }
                 else
                 {
                     throw new NotSupportedException(string.Format(SystemForCrossDomainIdentityManagementServiceResources.ExceptionFilterAttributePathNotSupportedTemplate, queryFilter.AttributePath));
                 }
             }
-            
+
             predicate = predicate.Or(predicateAnd);
-            results = this.storage.Groups.Values.Where(predicate.Compile());
+            results = repository.ListAllAsync().Result.Where(predicate.Compile());
 
             return Task.FromResult(results.ToArray());
         }
@@ -158,28 +150,19 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            Core2Group exisitingGroups = resource as Core2Group;
-            if
-            (
-                this.storage.Groups.Values.Any(
-                    (Core2Group exisitingUser) =>
-                        string.Equals(exisitingUser.DisplayName, group.DisplayName, StringComparison.Ordinal) &&
-                        !string.Equals(exisitingUser.Identifier, group.Identifier, StringComparison.OrdinalIgnoreCase))
-            )
-            {
-                throw new HttpResponseException(HttpStatusCode.Conflict);
-            }
+            Core2Group exisitingGroup = repository.GetGroupByIdAsync(group.Identifier).Result;
 
-            if (!this.storage.Groups.TryGetValue(group.Identifier, out Core2Group _))
+            if (exisitingGroup == null)
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
 
             // Update metadata
-            group.Metadata.Created = exisitingGroups.Metadata.Created;
+            group.Metadata.Created = exisitingGroup.Metadata.Created;
             group.Metadata.LastModified = DateTime.UtcNow;
 
-            this.storage.Groups[group.Identifier] = group;
+            repository.UpdateGroupByIdAsync(group.Identifier, group).Wait();
+
             Resource result = group as Resource;
             return Task.FromResult(result);
         }
@@ -201,15 +184,13 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new ArgumentNullException(nameof(parameters));
             }
 
+            Resource result;
             string identifier = parameters.ResourceIdentifier.Identifier;
+            result = repository.GetGroupByIdAsync(identifier).Result as Resource;
 
-            if (this.storage.Groups.ContainsKey(identifier))
+            if (result != null)
             {
-                if (this.storage.Groups.TryGetValue(identifier, out Core2Group group))
-                {
-                    Resource result = group as Resource;
-                    return Task.FromResult(result);
-                }
+                return Task.FromResult(result);
             }
 
             throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -246,11 +227,14 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new NotSupportedException(unsupportedPatchTypeName);
             }
 
-            if (this.storage.Groups.TryGetValue(patch.ResourceIdentifier.Identifier, out Core2Group group))
+            Core2Group group = repository.GetGroupByIdAsync(patch.ResourceIdentifier.Identifier).Result;
+
+            if (group != null)
             {
                 group.Apply(patchRequest);
                 // Update metadata
                 group.Metadata.LastModified = DateTime.UtcNow;
+                repository.UpdateGroupByIdAsync(patch.ResourceIdentifier.Identifier, group).Wait();
             }
             else
             {

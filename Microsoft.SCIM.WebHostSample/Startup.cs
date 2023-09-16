@@ -37,7 +37,7 @@ namespace Microsoft.SCIM.WebHostSample
             this.configuration = configuration;
 
             this.MonitoringBehavior = new ConsoleMonitor();
-            this.ProviderBehavior = new InMemoryProvider(new UserRepository(configuration));
+            this.ProviderBehavior = new InMemoryProvider(new UserRepository(configuration), new GroupRepository(configuration));
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -87,6 +87,7 @@ namespace Microsoft.SCIM.WebHostSample
             services.AddAuthentication(ConfigureAuthenticationOptions).AddJwtBearer(ConfigureJwtBearerOptons);
             services.AddControllers().AddNewtonsoftJson(ConfigureMvcNewtonsoftJsonOptions);
             services.AddSingleton<IUserRepository, UserRepository>();
+            services.AddSingleton<IGroupRepository, GroupRepository>();
 
             services.AddSingleton(typeof(IProvider), this.ProviderBehavior);
             services.AddSingleton(typeof(IMonitor), this.MonitoringBehavior);
@@ -108,8 +109,9 @@ namespace Microsoft.SCIM.WebHostSample
                 var services = serviceScope.ServiceProvider;
 
                 var userRepositoryService = services.GetRequiredService<IUserRepository>();
+                var groupRepositoryService = services.GetRequiredService<IGroupRepository>();
 
-                ProviderBehavior = new InMemoryProvider(userRepositoryService);
+                ProviderBehavior = new InMemoryProvider(userRepositoryService, groupRepositoryService);
             }
             app.UseHsts();
             app.UseRouting();

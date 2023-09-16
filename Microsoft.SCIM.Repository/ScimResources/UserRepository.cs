@@ -51,18 +51,8 @@ public class UserRepository : DatabaseRepositoryBasic, IUserRepository
         {
             var value = await ListAsync<string>(LIST_ALL_USERS);
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("[");
-            foreach (var item in value)
-            {
-                sb.Append(item);
-                sb.Append(",");
-            }
-            sb.Remove(sb.Length - 1, 1);
-            sb.Append("]");
-            var valueString = sb.ToString();
+            var returnValue = value.Select(user => JsonConvert.DeserializeObject<Core2EnterpriseUser>(user));
 
-            var returnValue = JsonConvert.DeserializeObject<IEnumerable<Core2EnterpriseUser>>(valueString);
             return returnValue;
 
         }
@@ -81,6 +71,11 @@ public class UserRepository : DatabaseRepositoryBasic, IUserRepository
             parameters.Add("@UserId", id);
 
             var value = await GetAsync<string>(GET_USER_BY_ID, parameters);
+
+            if (value == null)
+            {
+                return null;
+            }
 
             var returnValue = JsonConvert.DeserializeObject<Core2EnterpriseUser>(value);
             return returnValue;

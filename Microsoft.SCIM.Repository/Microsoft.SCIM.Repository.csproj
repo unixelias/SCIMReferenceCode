@@ -5,11 +5,17 @@
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="ScimResources\Queries\CheckIfGroupExists.sql" />
     <None Remove="ScimResources\Queries\CheckIfUserExists.sql" />
+    <None Remove="ScimResources\Queries\DeleteGroup.sql" />
     <None Remove="ScimResources\Queries\DeleteUser.sql" />
+    <None Remove="ScimResources\Queries\GetGroupById.sql" />
     <None Remove="ScimResources\Queries\GetUserById.sql" />
+    <None Remove="ScimResources\Queries\InsertGroup.sql" />
     <None Remove="ScimResources\Queries\InsertUser.sql" />
+    <None Remove="ScimResources\Queries\ListAllGroups.sql" />
     <None Remove="ScimResources\Queries\ListAllUsers.sql" />
+    <None Remove="ScimResources\Queries\UpdateGroupById.sql" />
     <None Remove="ScimResources\Queries\UpdateUserById.sql" />
   </ItemGroup>
 
@@ -23,10 +29,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="ScimResources\Queries\CheckIfGroupExists.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\DeleteGroup.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\GetGroupById.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\InsertGroup.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\ListAllGroups.sql" />
     <EmbeddedResource Include="ScimResources\Queries\ListAllUsers.sql" />
     <EmbeddedResource Include="ScimResources\Queries\DeleteUser.sql" />
     <EmbeddedResource Include="ScimResources\Queries\CheckIfUserExists.sql" />
     <EmbeddedResource Include="ScimResources\Queries\GetUserById.sql" />
+    <EmbeddedResource Include="ScimResources\Queries\UpdateGroupById.sql" />
     <EmbeddedResource Include="ScimResources\Queries\UpdateUserById.sql" />
     <EmbeddedResource Include="ScimResources\Queries\InsertUser.sql" />
   </ItemGroup>

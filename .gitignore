@@ -333,4 +333,12 @@ ASALocalRun/
 Log/
 *.txt
 
-Microsoft.SCIM.WebHostSample/appsettings.Development.json
+Microsoft.SCIM.WebHostSample/Properties/serviceDependencies.json
+
+Microsoft.SCIM.WebHostSample/Properties/serviceDependencies.scim-teste - Zip Deploy.json
+
+Microsoft.SCIM.WebHostSample/Properties/ServiceDependencies/scim-teste - Zip Deploy/apis1.arm.json
+
+Microsoft.SCIM.WebHostSample/Properties/ServiceDependencies/scim-teste - Zip Deploy/
+
+**/appsettings.*.json

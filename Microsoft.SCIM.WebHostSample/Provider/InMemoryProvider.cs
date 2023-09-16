@@ -33,10 +33,10 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                     new Core2ResourceType[] { SampleResourceTypes.UserResourceType, SampleResourceTypes.GroupResourceType } );
 
 
-        public InMemoryProvider(IUserRepository repository)
+        public InMemoryProvider(IUserRepository userRepository, IGroupRepository groupRepository)
         {
-            this.groupProvider = new InMemoryGroupProvider();
-            this.userProvider = new InMemoryUserProvider(repository);
+            this.groupProvider = new InMemoryGroupProvider(groupRepository);
+            this.userProvider = new InMemoryUserProvider(userRepository);
         }
 
         public override IReadOnlyCollection<Core2ResourceType> ResourceTypes => InMemoryProvider.Types.Value;

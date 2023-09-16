@@ -2,6 +2,8 @@
 
 namespace Microsoft.SCIM.WebHostSample.Provider
 {
+    using Microsoft.SCIM;
+    using Microsoft.SCIM.Repository.ScimResources;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -9,17 +11,13 @@ namespace Microsoft.SCIM.WebHostSample.Provider
     using System.Net;
     using System.Threading.Tasks;
     using System.Web.Http;
-    using Microsoft.SCIM;
-    using Microsoft.SCIM.Repository.ScimResources;
 
     public class InMemoryUserProvider : ProviderBase
     {
-        //private readonly InMemoryStorage storage;
         private readonly IUserRepository repository;
 
         public InMemoryUserProvider(IUserRepository repository)
         {
-            //    this.storage = InMemoryStorage.Instance;
             this.repository = repository;
         }
 
@@ -36,31 +34,18 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            if(repository.CheckIfUserExistsAsync(user.Identifier, user.UserName).Result)
+            if (repository.CheckIfUserExistsAsync(user.Identifier, user.UserName).Result)
             {
                 throw new HttpResponseException(HttpStatusCode.Conflict);
             }
 
-            //IEnumerable<Core2EnterpriseUser> exisitingUsers = this.storage.Users.Values;
-            //if
-            //(
-            //    exisitingUsers.Any(
-            //        (Core2EnterpriseUser exisitingUser) =>
-            //            string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal))
-            //)
-            //{
-            //    throw new HttpResponseException(HttpStatusCode.Conflict);
-            //}
-
             // Update metadata
             DateTime created = DateTime.UtcNow;
             user.Metadata.Created = created;
-            user.Metadata.LastModified = created; 
-            
+            user.Metadata.LastModified = created;
+
             string resourceIdentifier = Guid.NewGuid().ToString();
             resource.Identifier = resourceIdentifier;
-            //this.storage.Users.Add(resourceIdentifier, user);
-
 
             repository.CreateAsync(user).Wait();
             return Task.FromResult(resource);
@@ -74,11 +59,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             }
 
             string identifier = resourceIdentifier.Identifier;
-
-            //if (this.storage.Users.ContainsKey(identifier))
-            //{
-            //    this.storage.Users.Remove(identifier);
-            //}
 
             repository.DeleteUserByIdAsync(identifier).Wait();
             return Task.CompletedTask;
@@ -110,20 +90,12 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             var predicate = PredicateBuilder.False<Core2EnterpriseUser>();
             Expression<Func<Core2EnterpriseUser, bool>> predicateAnd;
 
-
             if (parameters.AlternateFilters.Count <= 0)
             {
                 results = repository.ListAllAsync().Result.Select((Core2EnterpriseUser user) => user as Resource);
             }
-
-            //if (parameters.AlternateFilters.Count <= 0)
-            //{
-            //    results = this.storage.Users.Values.Select(
-            //        (Core2EnterpriseUser user) => user as Resource);
-            //}
             else
             {
-
                 foreach (IFilter queryFilter in parameters.AlternateFilters)
                 {
                     predicateAnd = PredicateBuilder.True<Core2EnterpriseUser>();
@@ -136,7 +108,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                         {
                             throw new ArgumentException(SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidParameters);
                         }
-
                         else if (string.IsNullOrWhiteSpace(andFilter.ComparisonValue))
                         {
                             throw new ArgumentException(SystemForCrossDomainIdentityManagementServiceResources.ExceptionInvalidParameters);
@@ -153,8 +124,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
                             string userName = andFilter.ComparisonValue;
                             predicateAnd = predicateAnd.And(p => string.Equals(p.UserName, userName, StringComparison.OrdinalIgnoreCase));
-
-                           
                         }
 
                         // DisplayName filter
@@ -167,7 +136,7 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                             }
 
                             string displayName = andFilter.ComparisonValue;
-                            predicateAnd = predicateAnd.And(p => string.Equals(p.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));                           
+                            predicateAnd = predicateAnd.And(p => string.Equals(p.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));
                         }
 
                         // ExternalId filter
@@ -181,8 +150,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
                             string externalIdentifier = andFilter.ComparisonValue;
                             predicateAnd = predicateAnd.And(p => string.Equals(p.ExternalIdentifier, externalIdentifier, StringComparison.OrdinalIgnoreCase));
-
-                           
                         }
 
                         //Active Filter
@@ -196,7 +163,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
                             bool active = bool.Parse(andFilter.ComparisonValue);
                             predicateAnd = predicateAnd.And(p => p.Active == active);
-
                         }
 
                         //LastModified filter
@@ -206,22 +172,15 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                             {
                                 DateTime comparisonValue = DateTime.Parse(andFilter.ComparisonValue).ToUniversalTime();
                                 predicateAnd = predicateAnd.And(p => p.Metadata.LastModified >= comparisonValue);
-
-                               
                             }
                             else if (andFilter.FilterOperator == ComparisonOperator.EqualOrLessThan)
                             {
                                 DateTime comparisonValue = DateTime.Parse(andFilter.ComparisonValue).ToUniversalTime();
                                 predicateAnd = predicateAnd.And(p => p.Metadata.LastModified <= comparisonValue);
-
-                                
                             }
                             else
                                 throw new NotSupportedException(
                                     string.Format(SystemForCrossDomainIdentityManagementServiceResources.ExceptionFilterOperatorNotSupportedTemplate, andFilter.FilterOperator));
-
-
-
                         }
                         else
                             throw new NotSupportedException(
@@ -229,15 +188,12 @@ namespace Microsoft.SCIM.WebHostSample.Provider
 
                         currentFilter = andFilter;
                         andFilter = andFilter.AdditionalFilter;
-
                     } while (currentFilter.AdditionalFilter != null);
 
                     predicate = predicate.Or(predicateAnd);
-
                 }
-                
+
                 results = repository.ListAllAsync().Result.Where(predicate.Compile());
-                //results = this.storage.Users.Values.Where(predicate.Compile());
             }
 
             if (parameters.PaginationParameters != null)
@@ -263,29 +219,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            if (repository.CheckIfUserExistsAsync(user.Identifier, user.UserName).Result)
-            {
-                throw new HttpResponseException(HttpStatusCode.Conflict);
-            }
-            //if
-            //(
-            //    this.storage.Users.Values.Any(
-            //        (Core2EnterpriseUser exisitingUser) =>
-            //            string.Equals(exisitingUser.UserName, user.UserName, StringComparison.Ordinal) &&
-            //            !string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase))
-            //)
-            //{
-            //    throw new HttpResponseException(HttpStatusCode.Conflict);
-            //}
-
-
-
-            //Core2EnterpriseUser exisitingUser = this.storage.Users.Values
-            //    .FirstOrDefault(
-            //        (Core2EnterpriseUser exisitingUser) =>
-            //            string.Equals(exisitingUser.Identifier, user.Identifier, StringComparison.OrdinalIgnoreCase)
-            //    );
-
             Core2EnterpriseUser exisitingUser = repository.GetUserByIdAsync(user.Identifier).Result;
             if (exisitingUser == null)
             {
@@ -296,7 +229,8 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             user.Metadata.Created = exisitingUser.Metadata.Created;
             user.Metadata.LastModified = DateTime.UtcNow;
 
-            //this.storage.Users[user.Identifier] = user;
+            repository.UpdateUserByIdAsync(user.Identifier, user).Wait();
+
             Resource result = user as Resource;
 
             return Task.FromResult(result);
@@ -326,14 +260,6 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             {
                 return Task.FromResult(result);
             }
-            //if (this.storage.Users.ContainsKey(identifier))
-            //{
-            //    if (this.storage.Users.TryGetValue(identifier, out Core2EnterpriseUser user))
-            //    {
-            //        result = user as Resource;
-            //        return Task.FromResult(result);
-            //    }
-            //}
 
             throw new HttpResponseException(HttpStatusCode.NotFound);
         }
@@ -374,28 +300,15 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             if (user != null)
             {
                 user.Apply(patchRequest);
-
-                repository.UpdateUserByIdAsync(patch.ResourceIdentifier.Identifier, user).Wait();
                 // Update metadata
                 user.Metadata.LastModified = DateTime.UtcNow;
+
+                repository.UpdateUserByIdAsync(patch.ResourceIdentifier.Identifier, user).Wait();
             }
             else
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
-            
-
-            //if (this.storage.Users.TryGetValue(patch.ResourceIdentifier.Identifier, out Core2EnterpriseUser user))
-            //{
-            //    user.Apply(patchRequest);
-
-            //    // Update metadata
-            //    user.Metadata.LastModified = DateTime.UtcNow;
-            //}
-            //else
-            //{
-            //    throw new HttpResponseException(HttpStatusCode.NotFound);
-            //}
 
             return Task.CompletedTask;
         }
