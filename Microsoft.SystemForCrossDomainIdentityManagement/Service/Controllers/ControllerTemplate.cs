@@ -194,7 +194,7 @@ namespace Microsoft.SCIM
         [ProducesResponseType(typeof(Core2Error), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(Core2Error), StatusCodes.Status501NotImplemented)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
-        public virtual async Task<ActionResult<QueryResponseBase>> Get()
+        public virtual async Task<ActionResult<QueryResponseBase>> Get([FromQuery] string filter, [FromQuery] string attributes, [FromQuery] string startIndex, [FromQuery] string count, [FromQuery] string excludedAttributes)
         {
             string correlationIdentifier = null;
             try

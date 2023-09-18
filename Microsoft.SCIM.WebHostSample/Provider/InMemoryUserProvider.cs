@@ -10,14 +10,17 @@ namespace Microsoft.SCIM.WebHostSample.Provider
     using System.Threading.Tasks;
     using System.Web.Http;
     using Microsoft.SCIM;
+    using Microsoft.SCIM.Repository.ScimResources;
 
     public class InMemoryUserProvider : ProviderBase
     {
         private readonly InMemoryStorage storage;
+        private readonly IUserRepository repository;
 
-        public InMemoryUserProvider()
+        public InMemoryUserProvider(IUserRepository repository)
         {
             this.storage = InMemoryStorage.Instance;
+            this.repository = repository;
         }
 
         public override Task<Resource> CreateAsync(Resource resource, string correlationIdentifier)
@@ -52,7 +55,7 @@ namespace Microsoft.SCIM.WebHostSample.Provider
             string resourceIdentifier = Guid.NewGuid().ToString();
             resource.Identifier = resourceIdentifier;
             this.storage.Users.Add(resourceIdentifier, user);
-
+            repository.CreateAsync(user).Wait();
             return Task.FromResult(resource);
         }
 

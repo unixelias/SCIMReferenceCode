@@ -6,6 +6,7 @@ namespace Microsoft.SCIM.WebHostSample.Provider
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.SCIM;
+    using Microsoft.SCIM.Repository.ScimResources;
     using Microsoft.SCIM.WebHostSample.Resources;
 
     public class InMemoryProvider : ProviderBase
@@ -32,10 +33,10 @@ namespace Microsoft.SCIM.WebHostSample.Provider
                     new Core2ResourceType[] { SampleResourceTypes.UserResourceType, SampleResourceTypes.GroupResourceType } );
 
 
-        public InMemoryProvider()
+        public InMemoryProvider(IUserRepository repository)
         {
             this.groupProvider = new InMemoryGroupProvider();
-            this.userProvider = new InMemoryUserProvider();
+            this.userProvider = new InMemoryUserProvider(repository);
         }
 
         public override IReadOnlyCollection<Core2ResourceType> ResourceTypes => InMemoryProvider.Types.Value;

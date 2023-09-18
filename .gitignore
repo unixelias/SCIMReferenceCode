@@ -332,3 +332,5 @@ ASALocalRun/
 # log files
 Log/
 *.txt
+
+Microsoft.SCIM.WebHostSample/appsettings.Development.json

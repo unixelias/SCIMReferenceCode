@@ -2,10 +2,6 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------
 
-using System;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -18,13 +14,20 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.SCIM;
+using Microsoft.SCIM.Repository.ScimResources;
 using Microsoft.SCIM.WebHostSample.Provider;
 using Newtonsoft.Json;
+using System;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-IMonitor monitoringBehavior = new ConsoleMonitor();
-IProvider providerBehavior = new InMemoryProvider();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+
+IMonitor monitoringBehavior = default;
+IProvider providerBehavior = default;
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthentication(ConfigureAuthenticationOptions).AddJwtBearer(config =>
@@ -36,10 +39,20 @@ builder.Services.AddControllers().AddNewtonsoftJson(ConfigureMvcNewtonsoftJsonOp
 builder.Services.AddSingleton(typeof(IProvider), providerBehavior);
 builder.Services.AddSingleton(typeof(IMonitor), monitoringBehavior);
 
+
 ConfigureSwagger(builder.Services);
 
-
 WebApplication app = builder.Build();
+
+using (var serviceScope = app.Services.CreateScope())
+{
+    var services = serviceScope.ServiceProvider;
+
+    var userRepositoryService = services.GetRequiredService<IUserRepository>();
+
+    monitoringBehavior = new ConsoleMonitor();
+    providerBehavior = new InMemoryProvider(userRepositoryService);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsProduction())
@@ -174,4 +187,3 @@ static void ConfigureMvcNewtonsoftJsonOptions(MvcNewtonsoftJsonOptions options)
 {
     options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
 }
-

@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Microsoft.SCIM.Repository\Microsoft.SCIM.Repository.csproj" />
     <ProjectReference Include="..\Microsoft.SystemForCrossDomainIdentityManagement\Microsoft.SCIM.csproj" />
   </ItemGroup>
 
