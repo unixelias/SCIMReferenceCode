@@ -73,10 +73,14 @@ namespace Microsoft.SCIM
         {
             if (this.Value == null)
             {
-                if 
+                if
                 (
                     this?.Path?.AttributePath != null &&
+#if NET
                     this.Path.AttributePath.Contains(AttributeNames.Members, StringComparison.OrdinalIgnoreCase) &&
+#else
+                    this.Path.AttributePath.Contains(AttributeNames.Members) &&
+#endif
                     this.Name == SCIM.OperationName.Remove &&
                     this.Path?.SubAttributes?.Count == 1
                 )

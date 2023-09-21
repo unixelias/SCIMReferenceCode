@@ -133,7 +133,11 @@ namespace Microsoft.SCIM
             string result = parameters.ToString();
             foreach (KeyValuePair<string, string> placeholder in placeHolders)
             {
+#if NET
                 result = result.Replace(placeholder.Key, placeholder.Value, StringComparison.InvariantCulture);
+#else
+                result = result.Replace(placeholder.Key, placeholder.Value);
+#endif
             }
             return result;
         }

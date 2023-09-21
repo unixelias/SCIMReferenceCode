@@ -2,7 +2,7 @@
 
 namespace Microsoft.SCIM
 {
-    public static class ServiceConstants
+    internal static class ServiceConstants
     {
         public const string PathSegmentResourceTypes = "ResourceTypes";
         public const string PathSegmentSchemas = "Schemas";

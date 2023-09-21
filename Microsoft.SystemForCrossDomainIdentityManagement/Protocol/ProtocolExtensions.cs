@@ -103,7 +103,7 @@ namespace Microsoft.SCIM
                 }
                 else
                 {
-                    foreach(OperationValue value in values)
+                    foreach (OperationValue value in values)
                     {
                         operationInternal.AddValue(value);
                     }
@@ -168,7 +168,7 @@ namespace Microsoft.SCIM
                                      .ToArray();
 
                                 IList<Member> buffer = new List<Member>();
-                                if(null == group.Members)
+                                if (null == group.Members)
                                 {
                                     group.Members = new List<Member>();
                                 }
@@ -213,6 +213,7 @@ namespace Microsoft.SCIM
                                 }
 
                                 group.Members = members.Values;
+
                                 break;
                         }
                     }
@@ -891,7 +892,7 @@ namespace Microsoft.SCIM
             string escapedIdentifier = Uri.EscapeDataString(resource.Identifier);
             string resultValue =
                 typeResource.ToString() +
-                ServiceConstants.SeparatorSegments + 
+                ServiceConstants.SeparatorSegments +
                 escapedIdentifier;
             result = new Uri(resultValue);
             return result;
@@ -1494,7 +1495,7 @@ namespace Microsoft.SCIM
                     value = patchOperationValue.Value;
                 }
 
-                if (string.Equals(referee, value,StringComparison.InvariantCulture))
+                if (string.Equals(referee, value, StringComparison.InvariantCulture))
                 {
                     referencesBuffer.Add(patchOperationValue);
                 }

@@ -69,8 +69,13 @@ namespace Microsoft.SCIM
 
         public override int GetHashCode()
         {
+#if NET
             int identifierCode = string.IsNullOrWhiteSpace(this.Identifier) ? 0 : this.Identifier.GetHashCode(StringComparison.InvariantCulture);
             int schemaIdentifierCode = string.IsNullOrWhiteSpace(this.SchemaIdentifier) ? 0 : this.SchemaIdentifier.GetHashCode(StringComparison.InvariantCulture);
+#else
+            int identifierCode = string.IsNullOrWhiteSpace(this.Identifier) ? 0 : this.Identifier.GetHashCode();
+            int schemaIdentifierCode = string.IsNullOrWhiteSpace(this.SchemaIdentifier) ? 0 : this.SchemaIdentifier.GetHashCode();
+#endif
             int result = identifierCode ^ schemaIdentifierCode;
             return result;
         }

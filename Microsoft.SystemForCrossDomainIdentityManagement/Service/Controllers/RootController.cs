@@ -4,9 +4,15 @@ namespace Microsoft.SCIM
 {
     using System;
 
+#if NET
     public sealed class RootController : ControllerTemplate<Resource>
     {
         public RootController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class RootControllerBase : ControllerTemplate<Resource>
+    {
+        public RootControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }

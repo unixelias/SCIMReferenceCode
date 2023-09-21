@@ -4,14 +4,15 @@
 
 namespace Microsoft.SCIM
 {
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Mvc;
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
+#if NET
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Mvc;
 
     [Route(ServiceConstants.RouteBulk)]
     [Authorize]
@@ -19,6 +20,11 @@ namespace Microsoft.SCIM
     public sealed class BulkRequestController : ControllerTemplate
     {
         public BulkRequestController(IProvider provider, IMonitor monitor)
+#else
+    public abstract class BulkRequestControllerBase : ControllerTemplate
+    {
+        public BulkRequestControllerBase(IProvider provider, IMonitor monitor)
+#endif
             : base(provider, monitor)
         {
         }
@@ -50,7 +56,6 @@ namespace Microsoft.SCIM
                 IRequest<BulkRequest2> request2 = new BulkRequest(request, bulkRequest, correlationIdentifier, extensions);
                 BulkResponse2 result = await provider.ProcessAsync(request2).ConfigureAwait(false);
                 return result;
-                
             }
             catch (ArgumentException argumentException)
             {

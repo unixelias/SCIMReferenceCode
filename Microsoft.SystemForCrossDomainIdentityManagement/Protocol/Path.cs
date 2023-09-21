@@ -156,8 +156,11 @@ namespace Microsoft.SCIM
                 expression = expression.Substring(schemaIdentifier.Length + 1);
                 buffer.SchemaIdentifier = schemaIdentifier;
             }
-
+#if NET
             int seperatorIndex = expression.IndexOf(Path.SeperatorAttributes, StringComparison.InvariantCulture);
+#else
+            int seperatorIndex = expression.IndexOf(Path.SeperatorAttributes);
+#endif
             if (seperatorIndex >= 0)
             {
                 string valuePathExpression = expression.Substring(seperatorIndex + 1);

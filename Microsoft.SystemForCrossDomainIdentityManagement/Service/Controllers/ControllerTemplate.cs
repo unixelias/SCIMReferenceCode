@@ -9,10 +9,16 @@ namespace Microsoft.SCIM
     using System.Net.Http;
     using System.Threading.Tasks;
     using System.Web.Http;
+#if NET
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
+#endif
 
+#if NET
     public abstract class ControllerTemplate : ControllerBase
+#else
+    public abstract class ControllerTemplate : ApiController
+#endif
     {
         internal const string AttributeValueIdentifier = "{identifier}";
         private const string HeaderKeyContentType = "Content-Type";
@@ -27,6 +33,7 @@ namespace Microsoft.SCIM
             this.provider = provider;
         }
 
+#if NET
         protected virtual void ConfigureResponse(Resource resource)
         {
             this.Response.ContentType = ProtocolConstants.ContentType;
@@ -50,18 +57,52 @@ namespace Microsoft.SCIM
                 this.Response.Headers.Add(ControllerTemplate.HeaderKeyLocation, resourceLocation);
             }
         }
+#else
+        protected virtual HttpResponseMessage ConfigureResponse(Resource resource, HttpStatusCode statusCode)
+        {
+            HttpResponseMessage response = Request.CreateResponse(statusCode, resource);
 
+            if (!response.Content.Headers.Contains(ControllerTemplate.HeaderKeyContentType))
+            {
+                response.Content.Headers.Add(ControllerTemplate.HeaderKeyContentType, ProtocolConstants.ContentType);
+            }
+
+            Uri baseResourceIdentifier = this.Request.GetBaseResourceIdentifier();
+            Uri resourceIdentifier = resource.GetResourceIdentifier(baseResourceIdentifier);
+            string resourceLocation = resourceIdentifier.AbsoluteUri;
+            if (!response.Headers.Contains(ControllerTemplate.HeaderKeyLocation))
+            {
+                response.Headers.Add(ControllerTemplate.HeaderKeyLocation, resourceLocation);
+            }
+            return response;
+        }
+#endif
+
+#if NET
         protected HttpRequestMessage ConvertRequest()
         {
             HttpRequestMessageFeature hreqmf = new HttpRequestMessageFeature(this.HttpContext);
             HttpRequestMessage result = hreqmf.HttpRequestMessage;
             return result;
         }
+#else
+        protected HttpRequestMessage ConvertRequest()
+        {
+            return this.Request;
+        }
+#endif
 
+#if NET
         protected ObjectResult ScimError(HttpStatusCode httpStatusCode, string message)
         {
             return StatusCode((int)httpStatusCode, new Core2Error(message, (int)httpStatusCode));
         }
+#else
+        protected IHttpActionResult ScimError(HttpStatusCode httpStatusCode, string message)
+        {
+            return StatusCode(httpStatusCode);
+        }
+#endif
 
         protected virtual bool TryGetMonitor(out IMonitor monitor)
         {
@@ -77,7 +118,7 @@ namespace Microsoft.SCIM
 
     public abstract class ControllerTemplate<T> : ControllerTemplate where T : Resource
     {
-        internal ControllerTemplate(IProvider provider, IMonitor monitor)
+        public ControllerTemplate(IProvider provider, IMonitor monitor)
             : base(provider, monitor)
         {
         }
@@ -90,9 +131,14 @@ namespace Microsoft.SCIM
             return result;
         }
 
-
+#if NET
         [HttpDelete(ControllerTemplate.AttributeValueIdentifier)]
         public virtual async Task<IActionResult> Delete(string identifier)
+#else
+        [HttpDelete]
+        [Route(AttributeValueIdentifier)]
+        public virtual async Task<IHttpActionResult> Delete(string identifier)
+#endif
         {
             string correlationIdentifier = null;
             try
@@ -182,7 +228,12 @@ namespace Microsoft.SCIM
 
         [HttpGet]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
+#if NET
         public virtual async Task<ActionResult<QueryResponseBase>> Get()
+#else
+        [Route("")]
+        public virtual async Task<IHttpActionResult> Get()
+#endif
         {
             string correlationIdentifier = null;
             try
@@ -282,9 +333,16 @@ namespace Microsoft.SCIM
             }
         }
 
+#if NET
         [HttpGet(ControllerTemplate.AttributeValueIdentifier)]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
         public virtual async Task<IActionResult> Get([FromUri]string identifier)
+#else
+        [HttpGet]
+        [Route(AttributeValueIdentifier)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "The names of the methods of a controller must correspond to the names of hypertext markup verbs")]
+        public virtual async Task<IHttpActionResult> Get([FromUri] string identifier)
+#endif
         {
             string correlationIdentifier = null;
             try
@@ -439,8 +497,14 @@ namespace Microsoft.SCIM
             }
         }
 
+#if NET
         [HttpPatch(ControllerTemplate.AttributeValueIdentifier)]
         public virtual async Task<IActionResult> Patch(string identifier, [FromBody]PatchRequest2 patchRequest)
+#else
+        [HttpPatch]
+        [Route(AttributeValueIdentifier)]
+        public virtual async Task<IHttpActionResult> Patch(string identifier, [FromBody] PatchRequest2 patchRequest)
+#endif
         {
             string correlationIdentifier = null;
 
@@ -472,8 +536,8 @@ namespace Microsoft.SCIM
                 {
                     return await this.Get(identifier).ConfigureAwait(false);
                 }
-                else
-                    return this.NoContent();
+
+                return this.NoContent();
             }
             catch (ArgumentException argumentException)
             {
@@ -556,7 +620,12 @@ namespace Microsoft.SCIM
         }
 
         [HttpPost]
+#if NET
         public virtual async Task<ActionResult<Resource>> Post([FromBody]T resource)
+#else
+        [Route("")]
+        public virtual async Task<IHttpActionResult> Post([FromBody] T resource)
+#endif
         {
             string correlationIdentifier = null;
 
@@ -575,8 +644,12 @@ namespace Microsoft.SCIM
 
                 IProviderAdapter<T> provider = this.AdaptProvider();
                 Resource result = await provider.Create(request, resource, correlationIdentifier).ConfigureAwait(false);
+#if NET
                 this.ConfigureResponse(result);
                 return this.CreatedAtAction(nameof(Post), result);
+#else
+                return this.ResponseMessage(this.ConfigureResponse(result, HttpStatusCode.Created));
+#endif
             }
             catch (ArgumentException argumentException)
             {
@@ -653,8 +726,14 @@ namespace Microsoft.SCIM
             }
         }
 
+#if NET
         [HttpPut(ControllerTemplate.AttributeValueIdentifier)]
         public virtual async Task<ActionResult<Resource>> Put([FromBody]T resource, string identifier)
+#else
+        [HttpPut]
+        [Route(AttributeValueIdentifier)]
+        public virtual async Task<IHttpActionResult> Put([FromBody] T resource, string identifier)
+#endif
         {
             string correlationIdentifier = null;
 
@@ -678,8 +757,12 @@ namespace Microsoft.SCIM
 
                 IProviderAdapter<T> provider = this.AdaptProvider();
                 Resource result = await provider.Replace(request, resource, correlationIdentifier).ConfigureAwait(false);
+#if NET
                 this.ConfigureResponse(result);
                 return this.Ok(result);
+#else
+                return this.ResponseMessage(this.ConfigureResponse(result, HttpStatusCode.OK));
+#endif
             }
             catch (ArgumentException argumentException)
             {
@@ -757,5 +840,12 @@ namespace Microsoft.SCIM
                 return this.ScimError(HttpStatusCode.InternalServerError, exception.Message);
             }
         }
+
+#if !NET
+        private IHttpActionResult NoContent()
+        {
+            return Content(HttpStatusCode.OK, string.Empty);
+        }
+#endif
     }
 }
